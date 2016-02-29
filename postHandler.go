@@ -1,15 +1,15 @@
 package main
 
 import (
-	"net/http"
-	"log"
 	"encoding/json"
+	"log"
+	"net/http"
 )
 
 func postComment(w http.ResponseWriter, req *http.Request) {
 	type successOrFail struct {
-		ok bool
-		errormsg string
+		Ok       bool
+		ErrorMsg string
 	}
 	if req.Method != "POST" {
 		// User trying to GET the page
@@ -19,13 +19,15 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	}
 	req.ParseForm()
 	var userMessage = req.Form.Get("message")
-	_, err := db.Exec("INSERT INTO messages(id, url) VALUES (?, ?)", nil, userMessage)
+	_, err := db.Exec("INSERT INTO messages(id, msg) VALUES (?, ?)", nil, userMessage)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		p := successOrFail{false, "DB error"}
 		json.NewEncoder(w).Encode(p)
+		return
 	}
-	
+
 	p := successOrFail{true, ""}
 	json.NewEncoder(w).Encode(p)
 }
