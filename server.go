@@ -3,13 +3,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/mattn/go-sqlite3"
 	"html"
 	"log"
 	"net/http"
-	"github.com/mattn/go-sqlite3"
 )
 
 
+var db *sql.DB;
 
 func main() {
 	db, err := sql.Open("sqlite3", ":memory:")
@@ -23,6 +24,13 @@ func main() {
 	defer db.Close()
 	db.Ping()
 
+	sqlStmt := "CREATE TABLE IF NOT EXISTS messages ( id INTEGER NOT NULL PRIMARY KEY, msg TEXT UNIQUE NOT NULL);"
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.HandleFunc("/newMessage", postComment)
 
 	handleRequest := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>%q</h1>", html.EscapeString(r.URL.Path))
