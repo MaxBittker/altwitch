@@ -39,23 +39,29 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 }
 
 func getAllMessages(w http.ResponseWriter, req *http.Request) {
-	type resultStruct struct {
+	type responseStruct struct {
 		Ok       bool
 		ErrorMsg string
 		Messages []string
 	}
-	rows, err := db.Query("SELECT * FROM messages")
+	rows, err := db.Query("SELECT * FROM messages ORDER BY id ASC")
 	defer rows.Close()
 	if err != nil {
 		log.Print(err)
-		p := resultStruct{false, "DB error", make([]string, 0, 0)}
+		p := responseStruct{false, "DB error", make([]string, 0, 0)}
 		json.NewEncoder(w).Encode(p)
 		return
 	}
+	var messages []string
 	for rows.Next() {
 		var id int
 		var message string
 		err = rows.Scan(&id, &message)
+		if err != nil {
+			log.Fatal(err)
+		}
+		messages = append(messages, message)
 	}
-
+	p := responseStruct{true, "", messages}
+	json.NewEncoder(w).Encode(p)
 }

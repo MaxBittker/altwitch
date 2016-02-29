@@ -31,6 +31,7 @@ func main() {
 	}
 
 	http.HandleFunc("/newMessage", postComment)
+	http.HandleFunc("/getAllMessages", getAllMessages)
 
 	handleRequest := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>%q</h1>", html.EscapeString(r.URL.Path))
