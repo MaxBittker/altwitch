@@ -36,7 +36,16 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		log.Panic(err)
+		// Don't crash if we get malformed input
+		log.Println(err)
+		p := responseStruct{false, "Badly formed JSON input"}
+		res, err := json.Marshal(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, string(res), http.StatusBadRequest)
+		}
+		return
 	}
 	userMessage := t.Message
 
