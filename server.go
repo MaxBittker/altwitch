@@ -2,9 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/mattn/go-sqlite3"
-	"html"
 	"log"
 	"net/http"
 )
@@ -32,17 +30,9 @@ func main() {
 
 	http.HandleFunc("/newMessage", postComment)
 	http.HandleFunc("/getAllMessages", getAllMessages)
-
 	http.Handle("/", http.FileServer(http.Dir("./client")))
-	if http.ListenAndServe(":8080", nil) != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
 
-	handleRequest := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "<h1>%q</h1>", html.EscapeString(r.URL.Path))
-	}
-
-	http.HandleFunc("/test", handleRequest)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
 }

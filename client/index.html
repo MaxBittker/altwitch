@@ -4,6 +4,7 @@
 
 <div id="comments">no comments yet</div>
 <form id="form">
+  <input id="name" type="text"></input>
   <input id="input" type="text"></input>
 </form>
 
@@ -11,10 +12,13 @@
   function submit(evt) {
     if (evt.keyCode == 13) {
       var input = document.getElementById("input"); //,
+      var nameField = document.getElementById("name"); //,
       var text = input.value
+      var name = nameField.value
+
       fetch('newMessage', {
         method: 'post',
-        body: JSON.stringify({Message: text})
+        body: JSON.stringify({Sender: name, Message: text})
       }).then(function (response) {
         console.log(response)
       })
@@ -35,7 +39,8 @@
           comments.innerHTML = ""
           json.Messages.map(message => {
             var newElement = document.createElement("p");
-            var textNode = document.createTextNode(message)
+            var textNode = document.createTextNode(message.Sender + " : " + message.Message)
+
             newElement.appendChild(textNode);
             comments.appendChild(newElement);
           })
@@ -46,5 +51,5 @@
     });
   }
   document.onkeypress = submit;
-  setInterval(poll, 3000);
+  setInterval(poll, 100);
 </script>

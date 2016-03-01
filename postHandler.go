@@ -10,9 +10,10 @@ import (
 func postComment(w http.ResponseWriter, req *http.Request) {
 
 	type postJSON struct {
-		sender  string
-		message string
+		Sender  string
+		Message string
 	}
+
 	type responseStruct struct {
 		Ok       bool
 		ErrorMsg string
@@ -30,18 +31,15 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 
 		return
 	}
-	// req.ParseForm()
-	// var userMessage = req.Form.Get("message")
-	// fmt.Printf("%s",userMessage)
-	// fmt.Printf("myVariable = %#v \n", req.Form)
 
 	decoder := json.NewDecoder(req.Body)
 	var t postJSON
-	error := decoder.Decode(&t)
-	if error != nil {
-		panic(error)
+	err := decoder.Decode(&t)
+
+	if err != nil {
+		panic(err)
 	}
-	var userMessage = t.message
+	var userMessage = t.Message
 
 	if userMessage == "" {
 		fmt.Printf("empty")
@@ -56,7 +54,7 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err := db.Exec("INSERT INTO messages(id, sender, msg) VALUES (?, ?, ?)", nil, t.sender, t.message)
+	_, err = db.Exec("INSERT INTO messages(id, sender, msg) VALUES (?, ?, ?)", nil, t.Sender, t.Message)
 
 	if err != nil {
 		log.Print(err)
@@ -86,7 +84,6 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query("SELECT * FROM messages ORDER BY id ASC")
-	defer rows.Close()
 	if err != nil {
 		log.Print(err)
 		p := responseStruct{false, "DB error", make([]messageStruct, 0, 0)}
@@ -98,6 +95,8 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+	defer rows.Close()
+
 	var messages []messageStruct
 	for rows.Next() {
 		var id int
@@ -116,8 +115,8 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 			log.Fatal(err)
 		}
 		messagewrapper := messageStruct{Sender: sender, Message: message}
-
 		messages = append(messages, messagewrapper)
+
 	}
 	p := responseStruct{true, "", messages}
 	json.NewEncoder(w).Encode(p)
