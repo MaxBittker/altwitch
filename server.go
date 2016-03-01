@@ -24,7 +24,7 @@ func main() {
 	defer db.Close()
 	db.Ping()
 
-	sqlStmt := "CREATE TABLE IF NOT EXISTS messages ( id INTEGER NOT NULL PRIMARY KEY, msg TEXT NOT NULL);"
+	sqlStmt := "CREATE TABLE IF NOT EXISTS messages ( id INTEGER NOT NULL PRIMARY KEY, sender TEXT NOT NULL, msg TEXT NOT NULL);"
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		log.Fatal(err)
@@ -33,10 +33,10 @@ func main() {
 	http.HandleFunc("/newMessage", postComment)
 	http.HandleFunc("/getAllMessages", getAllMessages)
 
-  http.Handle("/", http.FileServer(http.Dir("./client")))
-		if http.ListenAndServe(":8080", nil) != nil {
-			log.Fatal(err)
-		}
+	http.Handle("/", http.FileServer(http.Dir("./client")))
+	if http.ListenAndServe(":8080", nil) != nil {
+		log.Fatal(err)
+	}
 
 	handleRequest := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>%q</h1>", html.EscapeString(r.URL.Path))

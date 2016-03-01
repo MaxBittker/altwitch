@@ -9,8 +9,9 @@ import (
 
 func postComment(w http.ResponseWriter, req *http.Request) {
 
-	type test_struct struct {
-		Message string
+	type postJSON struct {
+		sender  string
+		message string
 	}
 	type responseStruct struct {
 		Ok       bool
@@ -35,12 +36,12 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	// fmt.Printf("myVariable = %#v \n", req.Form)
 
 	decoder := json.NewDecoder(req.Body)
-	var t test_struct
+	var t postJSON
 	error := decoder.Decode(&t)
 	if error != nil {
 		panic(error)
 	}
-	var userMessage = t.Message
+	var userMessage = t.message
 
 	if userMessage == "" {
 		fmt.Printf("empty")
@@ -55,7 +56,7 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err := db.Exec("INSERT INTO messages(id, msg) VALUES (?, ?)", nil, t.Message)
+	_, err := db.Exec("INSERT INTO messages(id, sender, msg) VALUES (?, ?, ?)", nil, t.sender, t.message)
 
 	if err != nil {
 		log.Print(err)
@@ -74,17 +75,21 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 }
 
 func getAllMessages(w http.ResponseWriter, req *http.Request) {
+	type messageStruct struct {
+		Sender  string
+		Message string
+	}
 	type responseStruct struct {
 		Ok       bool
 		ErrorMsg string
-		Messages []string
+		Messages []messageStruct
 	}
 	w.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query("SELECT * FROM messages ORDER BY id ASC")
 	defer rows.Close()
 	if err != nil {
 		log.Print(err)
-		p := responseStruct{false, "DB error", make([]string, 0, 0)}
+		p := responseStruct{false, "DB error", make([]messageStruct, 0, 0)}
 		res, err := json.Marshal(p)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -93,13 +98,15 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	var messages []string
+	var messages []messageStruct
 	for rows.Next() {
 		var id int
 		var message string
-		err = rows.Scan(&id, &message)
+		var sender string
+
+		err = rows.Scan(&id, &sender, &message)
 		if err != nil {
-			p := responseStruct{false, "DB error", make([]string, 0, 0)}
+			p := responseStruct{false, "DB error", make([]messageStruct, 0, 0)}
 			res, err := json.Marshal(p)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -108,7 +115,9 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 			}
 			log.Fatal(err)
 		}
-		messages = append(messages, message)
+		messagewrapper := messageStruct{Sender: sender, Message: message}
+
+		messages = append(messages, messagewrapper)
 	}
 	p := responseStruct{true, "", messages}
 	json.NewEncoder(w).Encode(p)
