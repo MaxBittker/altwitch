@@ -2,16 +2,21 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
 )
 
 func postComment(w http.ResponseWriter, req *http.Request) {
+
+	type test_struct struct {
+		Message string
+	}
 	type responseStruct struct {
 		Ok       bool
 		ErrorMsg string
 	}
+
 	if req.Method != "POST" {
 		// User trying to GET the page
 		p := responseStruct{false, "Can only POST this endpoint"}
@@ -24,11 +29,22 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 
 		return
 	}
-	req.ParseForm()
-	var userMessage = req.Form.Get("message")
-	fmt.Printf("%s",userMessage)
-	fmt.Printf("myVariable = %#v \n", req.Form)
+	// req.ParseForm()
+	// var userMessage = req.Form.Get("message")
+	// fmt.Printf("%s",userMessage)
+	// fmt.Printf("myVariable = %#v \n", req.Form)
+
+	decoder := json.NewDecoder(req.Body)
+	var t test_struct
+	error := decoder.Decode(&t)
+	if error != nil {
+		panic(error)
+	}
+	var userMessage = t.Message
+
 	if userMessage == "" {
+		fmt.Printf("empty")
+
 		p := responseStruct{false, "Message may not be empty"}
 		res, err := json.Marshal(p)
 		if err != nil {
@@ -39,7 +55,7 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err := db.Exec("INSERT INTO messages(id, msg) VALUES (?, ?)", nil, userMessage)
+	_, err := db.Exec("INSERT INTO messages(id, msg) VALUES (?, ?)", nil, t.Message)
 
 	if err != nil {
 		log.Print(err)

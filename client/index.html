@@ -11,16 +11,15 @@
   function submit(evt) {
     if (evt.keyCode == 13) {
       var input = document.getElementById("input"); //,
-      //   newElement = document.createElement("li") newtext = document.createTextNode(input.value), comments = document.getElementById("comments"); newElement.appendChild(newtext) comments.appendChild(newElement); input.value = "";
-      var formData = new FormData();
-      formData.set("message", input.value);
-
+      var text = input.value
       fetch('newMessage', {
         method: 'post',
-        body: "message=AHHH"
+        body: JSON.stringify({Message: text})
       }).then(function (response) {
         console.log(response)
       })
+      input.value = "";
+
       return false
     }
   }
@@ -31,7 +30,15 @@
       if (contentType && contentType.indexOf("application/json") !== -1) {
         return response.json().then(function (json) {
           // process your JSON further
-          console.log(json)
+
+          var comments = document.getElementById("comments");
+          comments.innerHTML = ""
+          json.Messages.map(message => {
+            var newElement = document.createElement("p");
+            var textNode = document.createTextNode(message)
+            newElement.appendChild(textNode);
+            comments.appendChild(newElement);
+          })
         });
       } else {
         console.log(contentType)
