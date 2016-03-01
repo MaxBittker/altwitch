@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -37,13 +36,11 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&t)
 
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
-	var userMessage = t.Message
+	userMessage := t.Message
 
 	if userMessage == "" {
-		fmt.Printf("empty")
-
 		p := responseStruct{false, "Message may not be empty"}
 		res, err := json.Marshal(p)
 		if err != nil {
@@ -68,7 +65,7 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	p := responseStruct{true, "TEST"}
+	p := responseStruct{true, ""}
 	json.NewEncoder(w).Encode(p)
 }
 

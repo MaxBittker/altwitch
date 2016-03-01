@@ -31,7 +31,7 @@ func main() {
 	http.HandleFunc("/newMessage", postComment)
 	http.HandleFunc("/getAllMessages", getAllMessages)
 	http.Handle("/", http.FileServer(http.Dir("./client")))
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8888", nil); err != nil {
 		log.Fatal(err)
 	}
 
