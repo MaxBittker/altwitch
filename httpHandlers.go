@@ -76,7 +76,7 @@ func newMessage(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		log.Print(err)
-		p := responseStruct{false, "DB error"}
+		p := responseStruct{false, "Internal database error"}
 		res, err := json.Marshal(p)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
