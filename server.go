@@ -30,6 +30,8 @@ func main() {
 
 	http.HandleFunc("/newMessage", newMessage)
 	http.HandleFunc("/getAllMessages", getAllMessages)
+	http.HandleFunc("/websocket", upgradeToWebsockets)
+	go theLobby.serveLobby()
 	http.Handle("/", http.FileServer(http.Dir("./client")))
 	if err := http.ListenAndServe(":8888", nil); err != nil {
 		log.Fatal(err)
