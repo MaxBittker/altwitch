@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/newMessage", postComment)
+	http.HandleFunc("/newMessage", newMessage)
 	http.HandleFunc("/getAllMessages", getAllMessages)
 	http.Handle("/", http.FileServer(http.Dir("./client")))
 	if err := http.ListenAndServe(":8888", nil); err != nil {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func postComment(w http.ResponseWriter, req *http.Request) {
+func newMessage(w http.ResponseWriter, req *http.Request) {
 
 	type postJSON struct {
 		Sender  string
