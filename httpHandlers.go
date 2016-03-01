@@ -9,7 +9,7 @@ import (
 func newMessage(w http.ResponseWriter, req *http.Request) {
 
 	// Input from the user/browser
-	type postJSON struct {
+	type messageStruct struct {
 		Sender  string
 		Message string
 	}
@@ -38,7 +38,7 @@ func newMessage(w http.ResponseWriter, req *http.Request) {
 
 	// Decode the user's input to us
 	decoder := json.NewDecoder(req.Body)
-	var t postJSON
+	var t messageStruct
 	// Convert the user's data into our struct
 	err := decoder.Decode(&t)
 
