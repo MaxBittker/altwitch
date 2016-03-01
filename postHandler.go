@@ -14,14 +14,25 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		// User trying to GET the page
 		p := responseStruct{false, "Can only POST this endpoint"}
-		json.NewEncoder(w).Encode(p)
+		res, err := json.Marshal(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, string(res), http.StatusBadRequest)
+		}
+
 		return
 	}
 	req.ParseForm()
 	var userMessage = req.Form.Get("message")
 	if userMessage == "" {
 		p := responseStruct{false, "Message may not be empty"}
-		json.NewEncoder(w).Encode(p)
+		res, err := json.Marshal(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, string(res), http.StatusBadRequest)
+		}
 		return
 	}
 
@@ -30,7 +41,12 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Print(err)
 		p := responseStruct{false, "DB error"}
-		json.NewEncoder(w).Encode(p)
+		res, err := json.Marshal(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, string(res), http.StatusBadRequest)
+		}
 		return
 	}
 
@@ -49,7 +65,12 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Print(err)
 		p := responseStruct{false, "DB error", make([]string, 0, 0)}
-		json.NewEncoder(w).Encode(p)
+		res, err := json.Marshal(p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, string(res), http.StatusBadRequest)
+		}
 		return
 	}
 	var messages []string
@@ -58,6 +79,13 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 		var message string
 		err = rows.Scan(&id, &message)
 		if err != nil {
+			p := responseStruct{false, "DB error", make([]string, 0, 0)}
+			res, err := json.Marshal(p)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			} else {
+				http.Error(w, string(res), http.StatusBadRequest)
+			}
 			log.Fatal(err)
 		}
 		messages = append(messages, message)
