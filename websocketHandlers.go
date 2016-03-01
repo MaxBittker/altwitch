@@ -20,7 +20,7 @@ func upgradeToWebsockets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &wsClient{conn: conn, outboundMsgs: make(chan []byte)}
+	client := &wsClient{conn: conn, outboundMsgs: make(chan []byte), userId: getNextId()}
 	// Welcome message, removable
 	client.conn.WriteMessage(websocket.TextMessage, []byte("Welcome to the chat room"))
 	// Get this client on the list

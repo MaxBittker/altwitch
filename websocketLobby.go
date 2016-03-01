@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gorilla/websocket"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,25 @@ type wsClient struct {
 
 	// Messages that we need to send to this client
 	outboundMsgs chan []byte
+
+	// Unique atomic ID
+	userId *uint32
+}
+
+var firstId uint32 = 0
+var mutex = &sync.Mutex{}
+
+func getNextId() *uint32 {
+	mutex.Lock()
+	returnInt := firstId
+	firstId += 1
+	mutex.Unlock()
+	return &returnInt
+}
+
+type websocketMessageStruct struct {
+	Message []byte
+	UserId  *uint32
 }
 
 // Reads input messages from this client in an infinite loop
@@ -33,7 +53,7 @@ func (client *wsClient) readMessages() {
 			return
 		}
 		// Send it to the lobby
-		theLobby.broadcast <- msg
+		theLobby.broadcast <- websocketMessageStruct{Message: msg, UserId: client.userId}
 	}
 }
 
@@ -57,7 +77,7 @@ type lobby struct {
 	clients map[*wsClient]bool
 
 	// Channel on which to receive messages
-	broadcast chan []byte
+	broadcast chan websocketMessageStruct
 
 	// Make a new connection
 	register chan *wsClient
@@ -68,7 +88,7 @@ type lobby struct {
 
 var theLobby = lobby{
 	clients:    make(map[*wsClient]bool),
-	broadcast:  make(chan []byte),
+	broadcast:  make(chan websocketMessageStruct),
 	register:   make(chan *wsClient),
 	unregister: make(chan *wsClient),
 }
@@ -84,17 +104,21 @@ func (l *lobby) serveLobby() {
 			delete(l.clients, conn)
 			// Close the channel - prevent a resource leak
 			close(conn.outboundMsgs)
-		case msg := <-l.broadcast:
+		case msgStruct := <-l.broadcast:
 			// We have a new inbound message!
 			for conn := range l.clients {
-				select {
-				case conn.outboundMsgs <- msg:
-					// do nothing, we just sent the message!
-				default:
-					// message did not send successfully
-					close(conn.outboundMsgs)
-					delete(l.clients, conn)
-				}
+					if msgStruct.UserId != conn.userId {
+						select {
+						case conn.outboundMsgs <- msgStruct.Message:
+
+						// do nothing, we just sent the message!
+						default:
+							// message did not send successfully
+							close(conn.outboundMsgs)
+							delete(l.clients, conn)
+						}
+					}
+
 
 			}
 		}
