@@ -33,6 +33,11 @@ func main() {
 	http.HandleFunc("/newMessage", postComment)
 	http.HandleFunc("/getAllMessages", getAllMessages)
 
+  http.Handle("/", http.FileServer(http.Dir("./client")))
+		if http.ListenAndServe(":8080", nil) != nil {
+			log.Fatal(err)
+		}
+
 	handleRequest := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>%q</h1>", html.EscapeString(r.URL.Path))
 	}

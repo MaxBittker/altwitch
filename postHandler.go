@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"fmt"
 )
 
 func postComment(w http.ResponseWriter, req *http.Request) {
@@ -25,6 +26,8 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 	}
 	req.ParseForm()
 	var userMessage = req.Form.Get("message")
+	fmt.Printf("%s",userMessage)
+	fmt.Printf("myVariable = %#v \n", req.Form)
 	if userMessage == "" {
 		p := responseStruct{false, "Message may not be empty"}
 		res, err := json.Marshal(p)
@@ -50,7 +53,7 @@ func postComment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	p := responseStruct{true, ""}
+	p := responseStruct{true, "TEST"}
 	json.NewEncoder(w).Encode(p)
 }
 
@@ -60,6 +63,7 @@ func getAllMessages(w http.ResponseWriter, req *http.Request) {
 		ErrorMsg string
 		Messages []string
 	}
+	w.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query("SELECT * FROM messages ORDER BY id ASC")
 	defer rows.Close()
 	if err != nil {

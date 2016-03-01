@@ -1,0 +1,43 @@
+<h1>
+  this is the client
+</h1>
+
+<div id="comments">no comments yet</div>
+<form id="form">
+  <input id="input" type="text"></input>
+</form>
+
+<script>
+  function submit(evt) {
+    if (evt.keyCode == 13) {
+      var input = document.getElementById("input"); //,
+      //   newElement = document.createElement("li") newtext = document.createTextNode(input.value), comments = document.getElementById("comments"); newElement.appendChild(newtext) comments.appendChild(newElement); input.value = "";
+      var formData = new FormData();
+      formData.set("message", input.value);
+
+      fetch('newMessage', {
+        method: 'post',
+        body: "message=AHHH"
+      }).then(function (response) {
+        console.log(response)
+      })
+      return false
+    }
+  }
+
+  function poll() {
+    fetch("/getAllMessages").then(function (response) {
+      var contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        return response.json().then(function (json) {
+          // process your JSON further
+          console.log(json)
+        });
+      } else {
+        console.log(contentType)
+      }
+    });
+  }
+  document.onkeypress = submit;
+  setInterval(poll, 3000);
+</script>
