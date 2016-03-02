@@ -6,7 +6,6 @@ import (
 	"github.com/paddycarey/gophy"
 	"html"
 	"log"
-	"math"
 	"net/url"
 	"strings"
 	"sync"
@@ -79,17 +78,14 @@ func (client *wsClient) readMessages() {
 		incomingStruct.Message = html.EscapeString(incomingStruct.Message)
 		if strings.HasPrefix(incomingStruct.Message, "/gif ") {
 			searchString := strings.TrimPrefix(incomingStruct.Message, "/gif ")
-			go sendGif(searchString, incomingStruct.Sender)
+			go sendGif(searchString, incomingStruct.Sender, client.userId)
 			continue
 		}
 		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(incomingStruct.Message), Sender: []byte(incomingStruct.Sender), UserId: client.userId}
 	}
 }
 
-func sendGif(searchTerm string, sender string) {
-	userId := uint32(math.MaxUint32) - 1
-	userId += 1
-
+func sendGif(searchTerm string, sender string, userId *uint32) {
 	searchTerm = url.QueryEscape(searchTerm)
 	co := &gophy.ClientOptions{}
 	client := gophy.NewClient(co)
@@ -101,7 +97,7 @@ func sendGif(searchTerm string, sender string) {
 	if num > 0 {
 		imageUrl := gifs[0].Images.FixedWidth.URL
 		giphyHtml := `<img src="` + imageUrl + `" alt="` + searchTerm + `">`
-		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(giphyHtml), Sender: []byte(sender), UserId: &userId}
+		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(giphyHtml), Sender: []byte(sender), UserId: userId}
 	}
 }
 
