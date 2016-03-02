@@ -230,7 +230,7 @@ func (l *lobby) serveLobby() {
 					// do nothing, we just sent the message!
 					default:
 						// message did not send successfully
-						close(conn.outboundMsgs)
+						l.unregister <- conn
 						delete(l.clients, conn)
 					}
 				} else {
