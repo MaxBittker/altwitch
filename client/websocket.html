@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Websocket example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+</head>
+<h1>
+    Websockets client
+</h1>
+
+<div id="comments">no comments yet</div>
+<form id="form">
+    <label for="name">Name</label>
+    <input id="name" type="text"/>
+    <label for="input">Message</label>
+    <input id="input" type="text"/>
+</form>
+
+<script>
+
+    var socket = new WebSocket("ws://localhost:8888/websocket");
+    socket.onmessage = function(msg) {
+        // msg is a MessageEvent object
+        var newElement = document.createElement("p");
+        var textNode = document.createTextNode(msg.data);
+        newElement.appendChild(textNode);
+        comments.appendChild(newElement);
+    };
+
+    function submit(evt) {
+        if (evt.keyCode == 13) {
+            var input = document.getElementById("input");
+            var nameField = document.getElementById("name");
+            var text = input.value;
+            var name = nameField.value;
+
+            socket.send(text);
+            input.value = "";
+            return false
+        }
+    }
+
+    document.onkeypress = submit;
+</script>
+</html>
