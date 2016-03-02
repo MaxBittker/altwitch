@@ -5,6 +5,7 @@
     <title>Websocket example</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 </head>
+<body>
 <h1>
     Websockets client
 </h1>
@@ -13,8 +14,8 @@
 <form id="form">
     <label for="name">Name</label>
     <input id="name" type="text"/>
-    <label for="input">Message</label>
-    <input id="input" type="text"/>
+    <label for="message">Message</label>
+    <input id="message" type="text"/>
 </form>
 
 <script>
@@ -37,11 +38,11 @@
         comments.appendChild(newElement);
     };
 
-    function submit(evt) {
+    function submitMessage(evt) {
         if (evt.keyCode == 13) {
-            var input = document.getElementById("input");
+            var message = document.getElementById("message");
             var nameField = document.getElementById("name");
-            var text = input.value;
+            var text = message.value;
             var name = nameField.value;
 
             var outgoingMessage = {
@@ -50,11 +51,25 @@
             };
 
             socket.send(JSON.stringify(outgoingMessage));
-            input.value = "";
+            message.value = "";
             return false
         }
     }
 
-    document.onkeypress = submit;
+    var messageBox = document.getElementById("message");
+    messageBox.onkeypress = submitMessage;
 </script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
+      crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+</body>
 </html>
