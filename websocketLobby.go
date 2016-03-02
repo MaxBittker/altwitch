@@ -68,7 +68,7 @@ func (client *wsClient) readMessages() {
 		incomingStruct := externalWebsocketMessageStruct{}
 		err = json.Unmarshal(msg, &incomingStruct)
 		if err != nil {
-			log.Println("Error unmarshalling input", err)
+			log.Println("Error unmarshalling input: ", err)
 			continue
 		}
 		// Disallow blank messages, don't throw an error at this point
@@ -91,29 +91,6 @@ func sendGif(searchTerm string, sender string) {
 	userId += 1
 
 	searchTerm = url.QueryEscape(searchTerm)
-	/*
-		queryUrl := "http://api.giphy.com/v1/gifs/search?q=" + searchTerm + "&api_key=dc6zaTOxFJmzC&fmt=json"
-		log.Println("Executing query", queryUrl)
-		resp, err := http.Get(queryUrl)
-		if err != nil {
-			log.Println("error loading giphy api", err)
-			return
-		}
-		var theinterface interface{}
-		err = json.NewDecoder(resp.Body).Decode(&theinterface)
-		if err != nil {
-			log.Println("Error unmarshalling Giphy API - Error:", err)
-			return
-		}
-		themap := theinterface.(map[string]interface{})
-		theinterface = themap["data"]
-		themap = theinterface.(map[string]interface{})
-		theinterface = themap["images"]
-		themap = theinterface.(map[string]interface{})
-		theinterface = themap["fixed_height"]
-		themap = theinterface.(map[string]interface{})
-		imageUrl := themap["url"].(string)
-	*/
 	co := &gophy.ClientOptions{}
 	client := gophy.NewClient(co)
 	gifs, num, err := client.SearchGifs(searchTerm, "", 1, 0)
@@ -178,24 +155,26 @@ func (l *lobby) serveLobby() {
 		case msgStruct := <-l.broadcast:
 			// We have a new inbound message!
 			for conn := range l.clients {
-				if msgStruct.UserId != conn.userId {
-					externalStruct := externalWebsocketMessageStruct{Message: string(msgStruct.Message), Sender: string(msgStruct.Sender)}
-					marshalled, err := json.Marshal(externalStruct)
-					if err == nil {
-						select {
-						case conn.outboundMsgs <- marshalled:
-
-						// do nothing, we just sent the message!
-						default:
-							// message did not send successfully
-							close(conn.outboundMsgs)
-							delete(l.clients, conn)
-						}
-					} else {
-						log.Println("Error marshalling: ", err)
-					}
+				theSender := msgStruct.Sender
+				if msgStruct.UserId == conn.userId {
+					// If the receiver is the same person as the sender
+					theSender = []byte("You")
 				}
+				externalStruct := externalWebsocketMessageStruct{Message: string(msgStruct.Message), Sender: string(theSender)}
+				marshalled, err := json.Marshal(externalStruct)
+				if err == nil {
+					select {
+					case conn.outboundMsgs <- marshalled:
 
+					// do nothing, we just sent the message!
+					default:
+						// message did not send successfully
+						close(conn.outboundMsgs)
+						delete(l.clients, conn)
+					}
+				} else {
+					log.Println("Error marshalling: ", err)
+				}
 			}
 		}
 	}
