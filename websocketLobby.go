@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/paddycarey/gophy"
+	"google.golang.org/api/googleapi/transport"
+	"google.golang.org/api/youtube/v3"
 	"html"
 	"log"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+	"os"
 )
 
 type wsClient struct {
@@ -25,6 +29,7 @@ type wsClient struct {
 
 var firstId uint32 = 0
 var mutex = &sync.Mutex{}
+
 // This is used to, in a parallel-safe way, get a unique
 // monotonically increasing user id for each new socket connections
 func getNextId() *uint32 {
@@ -88,8 +93,44 @@ func (client *wsClient) readMessages() {
 			go sendGif(searchString, incomingStruct.Sender, client.userId)
 			continue
 		}
+		if strings.HasPrefix(incomingStruct.Message, "/yt ") {
+			searchString := strings.TrimPrefix(incomingStruct.Message, "/yt ")
+			go sendYoutube(searchString, incomingStruct.Sender, client.userId)
+			continue
+		}
 		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(incomingStruct.Message), Sender: []byte(incomingStruct.Sender), UserId: client.userId}
 	}
+}
+
+func sendYoutube(searchTerm string, sender string, userId *uint32) {
+	browserKey := os.Getenv("YOUTUBE_API_KEY")
+	client := &http.Client{Transport: &transport.APIKey{Key: browserKey}}
+	service, err := youtube.New(client)
+	if err != nil {
+		log.Println("Error loading youtube service: ", err)
+		return
+	}
+
+	call := service.Search.List("id,snippet").Q(searchTerm).MaxResults(1)
+	response, err := call.Do()
+	if err != nil {
+		log.Println("Error making YouTube API request:", err)
+		return
+	}
+
+	for _, item := range response.Items {
+		switch item.Id.Kind {
+		case "youtube#video":
+			videoId := item.Id.VideoId
+			youtubeHtml := `<iframe id="ytplayer" type="text/html" width="640" height="390"
+  src="http://www.youtube.com/embed/` + videoId + `?autoplay=1"
+  frameborder="0"/>`
+			theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(youtubeHtml), Sender: []byte(sender), UserId: userId}
+			// We already limit the response to one, but let's not put blind faith in Google
+			continue
+		}
+	}
+
 }
 
 // This takes in a search term, a sender's name, and that sender's user id
