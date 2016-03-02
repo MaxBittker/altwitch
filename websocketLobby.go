@@ -100,6 +100,7 @@ func (client *wsClient) readMessages() {
 // to ensure that the user's name and the user's search
 // term are not going to contain unsafe HTML characters
 func sendGif(searchTerm string, sender string, userId *uint32) {
+	altTag := html.EscapeString(searchTerm)
 	searchTerm = url.QueryEscape(searchTerm)
 	co := &gophy.ClientOptions{}
 	client := gophy.NewClient(co)
@@ -110,7 +111,7 @@ func sendGif(searchTerm string, sender string, userId *uint32) {
 	}
 	if num > 0 {
 		imageUrl := gifs[0].Images.FixedWidth.URL
-		giphyHtml := `<img src="` + imageUrl + `" alt="` + searchTerm + `">`
+		giphyHtml := `<img src="` + imageUrl + `" alt="` + altTag + `">`
 		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(giphyHtml), Sender: []byte(sender), UserId: userId}
 	}
 }
