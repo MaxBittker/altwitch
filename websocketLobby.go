@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"sync"
@@ -29,9 +30,15 @@ func getNextId() *uint32 {
 	return &returnInt
 }
 
-type websocketMessageStruct struct {
+type internalWebsocketMessageStruct struct {
 	Message []byte
+	Sender  []byte
 	UserId  *uint32
+}
+
+type externalWebsocketMessageStruct struct {
+	Message string
+	Sender  string
 }
 
 // Reads input messages from this client in an infinite loop
@@ -53,7 +60,13 @@ func (client *wsClient) readMessages() {
 			return
 		}
 		// Send it to the lobby
-		theLobby.broadcast <- websocketMessageStruct{Message: msg, UserId: client.userId}
+		incomingStruct := externalWebsocketMessageStruct{}
+		err = json.Unmarshal(msg, &incomingStruct)
+		if err != nil {
+			log.Println("Error unmarshalling input", err)
+			continue
+		}
+		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(incomingStruct.Message), Sender: []byte(incomingStruct.Sender), UserId: client.userId}
 	}
 }
 
@@ -77,7 +90,7 @@ type lobby struct {
 	clients map[*wsClient]bool
 
 	// Channel on which to receive messages
-	broadcast chan websocketMessageStruct
+	broadcast chan internalWebsocketMessageStruct
 
 	// Make a new connection
 	register chan *wsClient
@@ -88,7 +101,7 @@ type lobby struct {
 
 var theLobby = lobby{
 	clients:    make(map[*wsClient]bool),
-	broadcast:  make(chan websocketMessageStruct),
+	broadcast:  make(chan internalWebsocketMessageStruct),
 	register:   make(chan *wsClient),
 	unregister: make(chan *wsClient),
 }
@@ -107,9 +120,12 @@ func (l *lobby) serveLobby() {
 		case msgStruct := <-l.broadcast:
 			// We have a new inbound message!
 			for conn := range l.clients {
-					if msgStruct.UserId != conn.userId {
+				if msgStruct.UserId != conn.userId {
+					externalStruct := externalWebsocketMessageStruct{Message: string(msgStruct.Message), Sender: string(msgStruct.Sender)}
+					marshalled, err := json.Marshal(externalStruct)
+					if err == nil {
 						select {
-						case conn.outboundMsgs <- msgStruct.Message:
+						case conn.outboundMsgs <- marshalled:
 
 						// do nothing, we just sent the message!
 						default:
@@ -117,8 +133,10 @@ func (l *lobby) serveLobby() {
 							close(conn.outboundMsgs)
 							delete(l.clients, conn)
 						}
+					} else {
+						log.Println("Error marshalling: ", err)
 					}
-
+				}
 
 			}
 		}

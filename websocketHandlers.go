@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -22,7 +23,12 @@ func upgradeToWebsockets(w http.ResponseWriter, r *http.Request) {
 
 	client := &wsClient{conn: conn, outboundMsgs: make(chan []byte), userId: getNextId()}
 	// Welcome message, removable
-	client.conn.WriteMessage(websocket.TextMessage, []byte("Welcome to the chat room"))
+	outgoingMsg := externalWebsocketMessageStruct{Message: "Welcome to the chat room", Sender: "The Admins"}
+	marshalled, err := json.Marshal(outgoingMsg)
+	if err != nil {
+		log.Println("Error marshalling welcome message")
+	}
+	client.conn.WriteMessage(websocket.TextMessage, marshalled)
 	// Get this client on the list
 	theLobby.register <- client
 	// Parallelize writing messages
