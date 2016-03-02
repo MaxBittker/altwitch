@@ -3,7 +3,12 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/paddycarey/gophy"
+	"html"
 	"log"
+	"math"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -66,7 +71,60 @@ func (client *wsClient) readMessages() {
 			log.Println("Error unmarshalling input", err)
 			continue
 		}
+		// Disallow blank messages, don't throw an error at this point
+		if incomingStruct.Message == "" {
+			continue
+		}
+		// For security, don't allow users to broadcast unescaped HTML
+		incomingStruct.Message = html.EscapeString(incomingStruct.Message)
+		if strings.HasPrefix(incomingStruct.Message, "/gif ") {
+			searchString := strings.TrimPrefix(incomingStruct.Message, "/gif ")
+			go sendGif(searchString, incomingStruct.Sender)
+			continue
+		}
 		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(incomingStruct.Message), Sender: []byte(incomingStruct.Sender), UserId: client.userId}
+	}
+}
+
+func sendGif(searchTerm string, sender string) {
+	userId := uint32(math.MaxUint32) - 1
+	userId += 1
+
+	searchTerm = url.QueryEscape(searchTerm)
+	/*
+		queryUrl := "http://api.giphy.com/v1/gifs/search?q=" + searchTerm + "&api_key=dc6zaTOxFJmzC&fmt=json"
+		log.Println("Executing query", queryUrl)
+		resp, err := http.Get(queryUrl)
+		if err != nil {
+			log.Println("error loading giphy api", err)
+			return
+		}
+		var theinterface interface{}
+		err = json.NewDecoder(resp.Body).Decode(&theinterface)
+		if err != nil {
+			log.Println("Error unmarshalling Giphy API - Error:", err)
+			return
+		}
+		themap := theinterface.(map[string]interface{})
+		theinterface = themap["data"]
+		themap = theinterface.(map[string]interface{})
+		theinterface = themap["images"]
+		themap = theinterface.(map[string]interface{})
+		theinterface = themap["fixed_height"]
+		themap = theinterface.(map[string]interface{})
+		imageUrl := themap["url"].(string)
+	*/
+	co := &gophy.ClientOptions{}
+	client := gophy.NewClient(co)
+	gifs, num, err := client.SearchGifs(searchTerm, "", 1, 0)
+	if err != nil {
+		log.Println("Gophy error", err)
+		return
+	}
+	if num > 0 {
+		imageUrl := gifs[0].Images.FixedWidth.URL
+		giphyHtml := `<img src="` + imageUrl + `" alt="` + searchTerm + `">`
+		theLobby.broadcast <- internalWebsocketMessageStruct{Message: []byte(giphyHtml), Sender: []byte(sender), UserId: &userId}
 	}
 }
 

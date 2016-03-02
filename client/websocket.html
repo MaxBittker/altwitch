@@ -31,8 +31,9 @@
         // msg is a MessageEvent object
         var newElement = document.createElement("p");
         var incomingMessage = JSON.parse(msg.data);
-        var textNode = document.createTextNode(incomingMessage['Sender'] + ": " + incomingMessage['Message']);
-        newElement.appendChild(textNode);
+
+        // Deliberately not escaping HTML... We have to be careful to do this on the server side as well
+        newElement.innerHTML = incomingMessage['Sender'] + ": " + incomingMessage['Message'];
         comments.appendChild(newElement);
     };
 
