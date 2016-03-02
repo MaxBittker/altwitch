@@ -32,7 +32,7 @@
         var newElement = document.createElement("p");
         var incomingMessage = JSON.parse(msg.data);
 
-        // Deliberately not escaping HTML... We have to be careful to do this on the server side as well
+        // Deliberately not escaping HTML... We have to be careful to do this on the server side instead
         newElement.innerHTML = incomingMessage['Sender'] + ": " + incomingMessage['Message'];
         comments.appendChild(newElement);
     };
